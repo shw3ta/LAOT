@@ -1,52 +1,61 @@
 ---
 layout: post
-title: Introduction
+title: Gaussian Mixture Models and Expectation Maximization
 ---
-I just want a blog that renders latex, and looks beautiful, you know?
+
+Mixture models form a broad class of statistical models that essentially infer latent variables, i.e unobserved underlying patterns, from observable data. Such models are useful when a single distribution does not adequately capture the heterogeneity in data. 
 
 
-$$ P(y, x_1, \dotsc, x_n) = p(y) \prod_{i=1}^n p(x_i \mid y). $$
+Mixture models are a probabilistically grounded way of performing **_soft clustering_**{%include sidenote.html id="sn-soft-clustering" note=" **Soft vs. Hard Clustering:**  
+_**Hard clustering**_ is learning data that forms clusters which are well separated and do not overlap; datapoints either belong or do not belong to a given cluster.  
+_**Soft clustering**_ is learning data that forms clusters that are not well separated and may overlap; datapoints have to be represented in terms of the strength of their association with different clusters, as opposed to the previous case with hard boundaries.  "%}, where each individual cluster is assumed to be a generative model, usually Gaussian or multinomial. As a whole, these models treat non-parametrized distributions over data as weighted mixtures of different known, parametrized distributions; the task of the learner then becomes inference of the parameters specifying the individual components of the distribution. Often, to simplify the learning task, it is assumed that the given distribution is a weighted mixture of Gaussians. 
+
+Expectation Maximization (EM)is one of the most popular algorithms utilized to learn from Gaussian Mixture Models (GMM). In general, the EM algorithm is useful to cluster the exponential family of distributions and is not limited to just Gaussian distributions. Let's first understand what the problem at hand is, then at how the EM algorithm works. 
+
+## The $$1-$$D Mixture Model
+
+Consider a set of points in $$1-$$dimensional space. {% include marginfigure.html id="points" url="contents/EM/spherical-cows/points.png" description="The ideal, labelled $$1-D$$ dataset. Here, we colour in the datapoints to indicate the underlying distribution it is drawn from." %} {% include marginfigure.html id="components" url="contents/EM/spherical-cows/component-gaussians.png" description="From a labelled dataset, it is easy to estimate the parameters of the underlying Gaussian components. Unfortunately, the learner does not have this luxury." %} {% include marginfigure.html id="unlabelled" url="contents/EM/spherical-cows/unlabelled.png" description="This is what the learner gets to see. Based on this, the learner is supposed to infer which points belong to which cluster." %}Let's say that the underlying process is based on coin flips, and depending on what face the coin lands on, a point is drawn from a corresponding Gaussian $$\mathcal{N}(\mu_i, \sigma_i)$$ (where $$i$$ can be either _heads_ or _tails_). This process is repeated several times to form the training dataset given to the learner. Let's say that the true distribution over these points looks somewhat like in the adjoining figure. If we are given insight into the process, a fully labelled dataset such as this makes estimating the parameters of the individual components a trivial task : All that has to be done is estimate the mean and variance for each category, namely, ($$\mu_{head}, \sigma_{head}$$) and ($$\mu_{tail}, \sigma_{tail}$$) separately. If the samples per category are fairly representative, the estimated values would be very close to the truth. Estimation can be done as follows:
+
+$$\mu_i = \frac{\sum_j^{n_i}x_j}{n_i}$$  
+$$\sigma_i^2 = \frac{\sum_j^{n_i}(x_j - \mu_i)^2}{n_i}$$
+
+where, $$x_j$$ are the individual datapoints, $$n_i$$ the number of points in cluster $$i$$.
+
+Unfortunately, the process occurs in a black box, and all that the learner has access to is the resultant dataset. So the learner not only has to estimate the parameters of the individual Gaussians in the mixture, it also has to be able reasonably pre-empt how many components ($$k$$) the mixture is composed of. Thus, when we don't know the source of the datapoints, if we can infer the parameters of the Gaussians forming the mixture, we can guess whether the point is more likely to be part of the yellow Gaussian or the red one. 
+
+That is, if $$a$$ represents the event that a datapoint has been drawn from the yellow Gaussian and $$b$$, the event that a datapoint has been drawn from the red Gaussian, given a datapoint, we should after inferring the respective parameters be able to calculate the likelihood {% include sidenote.html id="ideal" note="Since we know
+$$P(x_i|a) = \frac{1}{\sqrt{2\pi\sigma_a^2}}\exp\bigg(-\frac{(x_i - \mu_a)^2}{2\sigma_a^2}\bigg)$$
+$$P(x_i|b) = \frac{1}{\sqrt{2\pi\sigma_b^2}}\exp\bigg(-\frac{(x_i - \mu_b)^2}{2\sigma_b^2}\bigg)$$  
+and $$P(a)$$, $$P(b)$$."%}
+
+$$P(a|x_i) = \frac{P(x_i|a)P(a)}{P(x_i|a)P(a) + P(x_i|b)P(b)}$$
+ 
+using Bayes rule.
+
+Herein lies the ultimate chicken and egg problem:
+- To guess which distribution is the source of a given point, we need the parameters of the component Gaussians
+- To estimate the parameters of the component Gaussians, we need to have access to the source of the datapoints. 
+
+The EM algorithm gives us an iterative mechanism by which we can infer the parameters of the component Gaussians, and thus find a way out of this loop.
+
+---
+
+### EM Algorithm
+
+Let $$k$$ be the number of Gaussians in the mixture. We are still dealing with $$1-D$$ Gaussian distributions; For higher dimensions, the algorithm is the same, with only very slight changes. In all cases, we assume symmetric, not skewed Gaussians as the components of the mixture. 
+
+Let $$G_i$$ be the event that the datapoint was drawn from the Gaussian $$\mathcal{N}$$($$\mu_i, \sigma_i$$). This is similar to what we represented using $$a$$ and $$b$$ earlier. Let $$x_j$$ represent datapoints, where $$1 \leq j \leq m$$.
+
+Start with $$k$$ randomly picked Gaussians with parameters ($$\mu_i, \sigma_i$$) for all $$i \in \mathbb{N}, 1 \leq i \leq k$$
+
+Iterate until convergence:
+2. _(E-step)_ For all datapoints in the training set, calculate the likelihood that it came from $$\mathcal{N}$$($$\mu_i, \sigma_i$$). That is, calculate 
+$$P(G_i|x_j)$$. Note, this is calculated with respect to every Gaussian component, at every datapoint. These probabilities are used as weights $$w_{j_i}$$ in the next step.
+3. _(M-step)_ Adjust the parameters of each Gaussian by calculating them as follows:
+
+$$\mu_i := \frac{\sum_j^{n_i}w_{j_i}.x_j}{\sum_j^{n_i}w_{j_i}}$$  
+
+$$\sigma_i^2 := \frac{\sum_j^{n_i}w_{j_i}.(x_j - \mu_i)^2}{\sum_j^{n_i}w_{j_i}}$$
 
 
-<!-- 
-## Describing probabilities with graphs
-
-Our independence assumption can be conveniently represented in the form of a graph.{% include marginfigure.html id="nb1" url="assets/img/naive-bayes.png" description="Graphical representation of the Naive Bayes spam classification model. We can interpret the directed graph as indicating a story of how the data was generated: first, a spam/non-spam label was chosen at random; then a subset of $$n$$ possible English words were sampled independently and at random." %}
-This representation has the immediate advantage of being easy to understand. It can be interpreted as telling us a story: an email was generated by first choosing at random whether the email is spam or not (indicated by $$y$$), and then by sampling words one at a time. Conversely, if we have a story of how our dataset was generated, we can naturally express it as a graph with an associated probability distribution.
-
-More importantly, we want to submit various queries to the model (e.g., what is the probability of spam given that I see the word "pill"?); answering these questions will require specialized algorithms that will be most naturally defined using graph-theoretical concepts. We will also use graph theory to analyze the speed of learning algorithms and to quantify the computational complexity (e.g., NP-hardness) of different learning tasks.
-
-The take-away point we want to get across is that there is an intimate connection between probability distributions and graphs that will be exploited throughout the course for defining, learning, and working with probabilistic models.
-
-## A bird's eye overview of the course
-
-Our discussion of graphical models will be divided into three major parts: representation (how to specify a model), inference (how to ask the model questions), and learning (how to fit a model to real-world data). These three themes will also be closely linked: to derive efficient inference and learning algorithms, the model will need to be adequately represented; furthermore, learning models will require inference as a subroutine. Thus, it will be best to always keep the three tasks in mind, rather than focusing on them in isolation{% include sidenote.html id="note_parikh" note="For a more detailed overview, see this [writeup](https://docs.google.com/file/d/0B_hicYJxvbiOc1ViZTRxbnhSU1cza1VhOFlhRlRuQQ/edit) by Neal Parikh; this part of the notes is based on it." %}.
-
-### Representation
-
-How do we express a probability distribution that models some real-world phenomenon? This is not a trivial problem: we have seen that a naive model for classifying spam messages with $$n$$ possible words requires us in general to specify $$O(2^n)$$ parameters. We will address this difficulty via general techniques for constructing tractable models. These recipes will make heavy use of graph theory; probabilities will be described by graphs whose properties (e.g., connectivity, tree-width) will reveal probabilistic and algorithmic features of the model (e.g., independence, learning complexity).
-
-### Inference
-
-Given a probabilistic model, how do we obtain answers to relevant questions about the world? Such questions often reduce to querying the marginal or conditional probabilities of certain events of interest. More concretely, we will be typically interested in asking the system two types of questions:
-
-- *Marginal inference*: what is the probability of a given variable in our model after we sum everything else out? An example query would be to determine the probability that a random house has more than three bedrooms.
-
-$$ p(x_1) = \sum_{x_2} \sum_{x_3} \cdots \sum_{x_n} p(x_1, x_2, \dotsc, x_n). $$
-
-- *Maximum a posteriori (MAP) inference* asks for the most likely assignment of variables. For example, we may try to determine the most likely spam message, solving the problem
-
-$$\underset{x_1, \dots, x_n}{\operatorname{argmax}}p(x_1,\dotsc,x_n, y=1).$$
-
-Often our queries will involve evidence (like in the MAP example above), in which case we will fix the assignment of a subset of the variables.
-
-It turns out that inference is a very challenging task. For many probabilities of interest, it will be NP-hard to answer any of these questions. Crucially, whether inference is tractable will depend on the structure of the graph that describes that probability! If a problem is intractable, we will still be able to obtain useful answers via approximate inference methods. Interestingly, algorithms described in this part of the course will be heavily based on work done in the statistical physics community in the mid-20th century.
-
-### Learning
-
-Our last key task refers to fitting a model to a dataset, which could be for example a large number of labeled examples of spam. By looking at the data, we can infer useful patterns (e.g., which words are found more frequently in spam emails), which we can then use to make predictions about the future. However, we will see that learning and inference are also inherently linked in a more subtle way, since inference will turn out to be a key subroutine that we will repeatedly call within learning algorithms. Also, the topic of learning will feature important connections to the field of computational learning theory --- which deals with questions such as generalization from limited data and overfitting --- as well as to Bayesian statistics --- which tells us (among other things) about how to combine prior knowledge and observed evidence in a principled way.
-
-
-<br/>
-
-|[Index](../../) | [Previous](../../) | [Next](../probabilityreview)| -->
+Now, even if $$k=2$$ in the relatively simpler $$1-D$$ case, this algorithm takes a long time to converge if the sample complexity is high. In some scenarios, as the algorithm approaches convergence, it can get stuck in local optima and can take a very long time to converge. This algorithm is useful in practise but is not computationally efficient, and statistical analysis provies no bounds on the  convergence rate. 

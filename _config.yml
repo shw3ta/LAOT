@@ -1,10 +1,10 @@
 baseurl: /why-is-ml
-title: why is ml
+title: Learning and Other Things
 subtitle: an attempt to understand the theory of statistical learning
 author: shweta prasad
 simple_search: http://google.com/search
 description: understanding machine learning from bottom up
-name: why is ml
+name: Learning and Other Things
 markdown_ext: "markdown,mkdown,mkdn,mkd,md"
 permalink: /articles/:short_year/:title
 timezone: America/New_York

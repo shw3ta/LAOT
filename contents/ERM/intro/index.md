@@ -101,17 +101,21 @@ $$\mathcal{D}^m(\{S: L_{(\mathcal{D}, f)}(h_S) > \epsilon \}) \leq \sum_{h \in \
 Since the event $$L_S(h) = 0$$ is the same as the event where all predictions are correct, we can write the last term in terms of $$h(x_i)$$ and $$y_i$$ for all $$i$$.
 
 Thus, we can write
+
 $$\mathcal{D}^m(\{S:L_S(h) = 0\}) = \mathcal{D}^m(\{S: \forall i, h(x_i) = f(x_i)\}) = \Pi_{i=1}^m\mathcal{D}(\{x_i:h(x_i) = y_i\})$$
 
-In the case of each individual sample of an element of $$S$$ we have $$\mathcal{D}(\{x_i:h(x_i) = y_i\}) = 1 -L_{\mathcal{D,f}}(h) \leq 1-\epsilon \leq e^{-\epsilon}$$
+In the case of each individual sample of an element of $$S$$ we have 
+
+$$\mathcal{D}(\{x_i:h(x_i) = y_i\}) = 1 -L_{\mathcal{D,f}}(h) \leq 1-\epsilon \leq e^{-\epsilon}$$
 
 Therefore, for the $$m$$ elements in the set, we can write
+
 $$\mathcal{D}^m(\{S: L_S(h) = 0 \}) \leq (1-\epsilon)^m \leq e^{-\epsilon m}$$
 
 Now we can rewrite in terms of the generalizaion error:
 $$\mathcal{D}^m(\{S: L_{(\mathcal{D}, f)}(h_S) > \epsilon \}) \leq |\mathcal{H}_B|e^{-\epsilon m} < |\mathcal{H}|e^{-\epsilon m}$$. 
 
-From this, we get that if $$m \geq \frac{\log(\|\mathcal{H}\|/\delta)}{\epsilon}$$, then for any oracle labeller $$f$$ and any distribution $$D$$ such that the realizability assumption holds, , with a confidence of at least $$1 - \delta$$ over an i.i.d sample $$S$$ of size $$m$$, for every ERM hypothesis $$h_S$$, the generalization error
+From this, we get that if $$m \geq \frac{\log(\|\mathcal{H}\|/\delta)}{\epsilon}$$, then for any oracle labeller $$f$$ and any distribution $$D$$ such that the realizability assumption holds, with a confidence of at least $$1 - \delta$$ over an i.i.d sample $$S$$ of size $$m$$, for every ERM hypothesis $$h_S$$, the generalization error
 
 $$L_{(\mathcal{D}, f)}(h_S) \leq \epsilon$$
 
