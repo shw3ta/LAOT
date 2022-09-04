@@ -1,3 +1,4 @@
-# Why is ML
+# Learning and Other Things
 
-This is an attempt to understand machine learning. 
+This is a space for me to write about things I learn 
+Sources all cited/linked.
